@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "fcntl.h": "c",
+        "cuda-subset.h": "c",
+        "hijack.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "cuda-helper.h": "c",
+        "stdint.h": "c",
+        "stddef.h": "c",
+        "nvml-helper.h": "c",
+        "stdarg.h": "c",
+        "limits.h": "c"
+    }
+}

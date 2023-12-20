@@ -27,6 +27,7 @@
 extern entry_t cuda_library_entry[];
 extern entry_t nvml_library_entry[];
 extern resource_data_t g_vcuda_config;
+extern char pid_path[];
 
 extern nvmlReturn_t nvmlInitWithFlags(unsigned int flags) {
   load_necessary_data();
@@ -70,6 +71,16 @@ nvmlReturn_t nvmlDeviceGetHandleByIndex(unsigned int index,
 nvmlReturn_t nvmlDeviceGetComputeRunningProcesses(nvmlDevice_t device,
                                                   unsigned int *infoCount,
                                                   nvmlProcessInfo_t *infos) {
+  // LOGGER(5, "Call Rewrite Function: %s\n", "nvmlDeviceGetComputeRunningProcesses");
+  // nvmlReturn_t ret;
+  // ret = NVML_ENTRY_CALL(nvml_library_entry,
+  //                        nvmlDeviceGetComputeRunningProcesses, device,
+  //                        infoCount, infos);
+  // if (g_vcuda_config.enable && ret == NVML_SUCCESS) {
+  //     atomic_action(pid_path, load_pids_table, NULL);
+  //     search_on_pids_table(infoCount, infos);
+  // }
+  // return ret; 
   return NVML_ENTRY_CALL(nvml_library_entry,
                          nvmlDeviceGetComputeRunningProcesses, device,
                          infoCount, infos);
@@ -495,10 +506,40 @@ nvmlReturn_t nvmlDeviceGetMemoryErrorCounter(nvmlDevice_t device,
                          device, errorType, counterType, locationType, count);
 }
 
+// TODO 再此拦截要显示的设备内存
 nvmlReturn_t nvmlDeviceGetMemoryInfo(nvmlDevice_t device,
                                      nvmlMemory_t *memory) {
-  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemoryInfo, device,
+  nvmlReturn_t ret;
+  ret = NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemoryInfo, device,
                          memory);
+    size_t used = 0;
+    if (g_vcuda_config.enable && ret == NVML_SUCCESS) {
+      atomic_action(pid_path, get_used_gpu_memory, (void *)&used);
+      // 最大可用显存限制为 vcuda 分配时的大小
+      memory->total = g_vcuda_config.gpu_memory;
+      //memory->used = used + memory->reserved;
+      memory->used = used;
+      memory->free = memory->used > g_vcuda_config.gpu_memory ? 0 : g_vcuda_config.gpu_memory - memory->used;
+    }
+  return ret;
+}
+
+// TODO 再此拦截要显示的设备内存
+nvmlReturn_t nvmlDeviceGetMemoryInfo_v2(nvmlDevice_t device, 
+                                        nvmlMemory_v2_t *memory) {
+    nvmlReturn_t ret;
+    ret = NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemoryInfo_v2, device, 
+                          memory);
+    size_t used = 0;
+    if (g_vcuda_config.enable && ret == NVML_SUCCESS) {
+      atomic_action(pid_path, get_used_gpu_memory, (void *)&used);
+      // 最大可用显存限制为 vcuda 分配时的大小
+      memory->total = g_vcuda_config.gpu_memory;
+      memory->used = used; // v2 版本接口used和reserved是分开计算的
+      //memory->free = (used + memory->reserved) > g_vcuda_config.gpu_memory ? 0 : g_vcuda_config.gpu_memory - used - memory->reserved;
+      memory->free = used > g_vcuda_config.gpu_memory ? 0 : g_vcuda_config.gpu_memory - used;
+    }
+    return ret; 
 }
 
 nvmlReturn_t nvmlDeviceGetMinorNumber(nvmlDevice_t device,
@@ -1611,6 +1652,16 @@ nvmlComputeInstanceGetInfo_v2(nvmlComputeInstance_t computeInstance,
 nvmlReturn_t nvmlDeviceGetComputeRunningProcesses_v2(nvmlDevice_t device,
                                                      unsigned int *infoCount,
                                                      nvmlProcessInfo_t *infos) {
+  // LOGGER(5, "Call Rewrite Function: %s\n", "nvmlDeviceGetComputeRunningProcesses_v2");
+  // nvmlReturn_t ret;
+  // ret = NVML_ENTRY_CALL(nvml_library_entry,
+  //                        nvmlDeviceGetComputeRunningProcesses_v2, device,
+  //                        infoCount, infos);
+  // if (g_vcuda_config.enable && ret == NVML_SUCCESS) {
+  //     atomic_action(pid_path, load_pids_table, NULL);
+  //     search_on_pids_table(infoCount, infos);
+  // }
+  // return ret;
   return NVML_ENTRY_CALL(nvml_library_entry,
                          nvmlDeviceGetComputeRunningProcesses_v2, device,
                          infoCount, infos);
@@ -1702,5 +1753,367 @@ nvmlReturn_t nvmlGetExcludedDeviceInfoByIndex(unsigned int index,
 nvmlReturn_t
 nvmlVgpuInstanceGetLicenseInfo(nvmlVgpuInstance_t vgpuInstance,
                                nvmlVgpuLicenseInfo_t *licenseInfo) {
-  return NVML_ENTRY_CALL(nvml_library_entry, nvmlVgpuInstanceGetLicenseInfo);
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlVgpuInstanceGetLicenseInfo, vgpuInstance, licenseInfo);
+}
+
+nvmlReturn_t 
+nvmlDeviceClearFieldValues ( nvmlDevice_t device, int  valuesCount, 
+                              nvmlFieldValue_t* values ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceClearFieldValues, device, valuesCount, values);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetAdaptiveClockInfoStatus ( nvmlDevice_t device, unsigned int* adaptiveClockStatus ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetAdaptiveClockInfoStatus, device, adaptiveClockStatus);
+}
+
+nvmlReturn_t
+nvmlDeviceGetComputeRunningProcesses_v3 ( nvmlDevice_t device, unsigned int* infoCount, nvmlProcessInfo_t* infos ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetComputeRunningProcesses_v3, device, infoCount, infos);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetDefaultEccMode(nvmlDevice_t device, nvmlEnableState_t* defaultMode ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetDefaultEccMode, device, defaultMode);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetDynamicPstatesInfo(nvmlDevice_t device, nvmlGpuDynamicPstatesInfo_t* pDynamicPstatesInfo ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetDynamicPstatesInfo, device, pDynamicPstatesInfo);
+}
+
+// nvmlReturn_t 
+// nvmlDeviceGetFanControlPolicy(nvmlDevice_t device, unsigned int  fan, 
+//                                     nvmlFanControlPolicy_t policy){
+//   return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetFanControlPolicy, device, fan, policy);                                  
+// }
+
+nvmlReturn_t 
+nvmlDeviceGetFanControlPolicy_v2(nvmlDevice_t device, unsigned int  fan, 
+                                    nvmlFanControlPolicy_t* policy){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetFanControlPolicy_v2, device, fan, policy);                                  
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGpcClkMinMaxVfOffset ( nvmlDevice_t device, int* minOffset, int* maxOffset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGpcClkMinMaxVfOffset, device, minOffset, maxOffset);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGpcClkVfOffset ( nvmlDevice_t device, int* offset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGpcClkVfOffset, device, offset);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGpuFabricInfo ( nvmlDevice_t device, nvmlGpuFabricInfo_t* gpuFabricInfo ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGpuFabricInfo, device, gpuFabricInfo);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGpuInstanceProfileInfoV ( nvmlDevice_t device, unsigned int  profile, 
+                                        nvmlGpuInstanceProfileInfo_v2_t* info ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGpuInstanceProfileInfoV, device, profile, info);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGpuMaxPcieLinkGeneration ( nvmlDevice_t device, unsigned int* maxLinkGenDevice ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGpuMaxPcieLinkGeneration, device, maxLinkGenDevice);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGraphicsRunningProcesses_v3 ( nvmlDevice_t device, unsigned int* infoCount, nvmlProcessInfo_t* infos ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGraphicsRunningProcesses_v3, device, infoCount, infos);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGspFirmwareMode ( nvmlDevice_t device, unsigned int* isEnabled, unsigned int* defaultMode ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGspFirmwareMode, device, isEnabled, defaultMode);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetGspFirmwareVersion ( nvmlDevice_t device, char* version ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetGspFirmwareVersion, device, version);
+}
+
+nvmlReturn_t
+nvmlDeviceGetJpgUtilization(nvmlDevice_t device, unsigned int *utilization, unsigned int *samplingPeriodUs){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetJpgUtilization, device, utilization, samplingPeriodUs);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMemClkMinMaxVfOffset ( nvmlDevice_t device, int* minOffset, int* maxOffset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemClkMinMaxVfOffset, device, minOffset, maxOffset);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMemClkVfOffset ( nvmlDevice_t device, int* offset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemClkVfOffset, device, offset);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMemoryBusWidth ( nvmlDevice_t device, unsigned int* busWidth ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMemoryBusWidth, device, busWidth);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMinMaxClockOfPState ( nvmlDevice_t device, nvmlClockType_t type, 
+            nvmlPstates_t pstate, unsigned int* minClockMHz, unsigned int* maxClockMHz ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMinMaxClockOfPState, device, type, pstate, minClockMHz, maxClockMHz);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMinMaxFanSpeed ( nvmlDevice_t device, unsigned int* minSpeed, unsigned int* maxSpeed ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMinMaxFanSpeed, device, minSpeed, maxSpeed);
+}
+
+nvmlReturn_t
+nvmlDeviceGetModuleId(nvmlDevice_t device, unsigned int *moduleId){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetModuleId, device, moduleId);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetMPSComputeRunningProcesses_v3 ( nvmlDevice_t device, unsigned int* infoCount,
+                                             nvmlProcessInfo_t* infos ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetMPSComputeRunningProcesses_v3, device, infoCount, infos);
+}
+
+nvmlReturn_t nvmlDeviceGetNumFans ( nvmlDevice_t device, unsigned int* numFans ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetNumFans, device, numFans);
+}
+
+
+nvmlReturn_t nvmlDeviceGetNumGpuCores ( nvmlDevice_t device, unsigned int* numCores ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetNumGpuCores, device, numCores);
+}
+
+nvmlReturn_t
+nvmlDeviceGetOfaUtilization(nvmlDevice_t device, unsigned int *utilization,
+                                           unsigned int *samplingPeriodUs){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetOfaUtilization, device, utilization, samplingPeriodUs);
+}
+
+nvmlReturn_t nvmlDeviceGetPcieLinkMaxSpeed ( nvmlDevice_t device, unsigned int* maxSpeed ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetPcieLinkMaxSpeed, device, maxSpeed);
+}
+
+nvmlReturn_t nvmlDeviceGetPcieSpeed ( nvmlDevice_t device, unsigned int* pcieSpeed ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetPcieSpeed, device, pcieSpeed);
+}
+
+nvmlReturn_t nvmlDeviceGetPowerSource ( nvmlDevice_t device, nvmlPowerSource_t* powerSource ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetPowerSource, device, powerSource);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetSupportedClocksEventReasons(nvmlDevice_t device, unsigned long long *supportedClocksEventReasons){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetSupportedClocksEventReasons, device, supportedClocksEventReasons);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetSupportedPerformanceStates ( nvmlDevice_t device, nvmlPstates_t* pstates, unsigned int  size ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetSupportedPerformanceStates, device, pstates, size);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetTargetFanSpeed ( nvmlDevice_t device, unsigned int  fan, unsigned int* targetSpeed ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetTargetFanSpeed, device, fan, targetSpeed);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetThermalSettings ( nvmlDevice_t device, unsigned int  sensorIndex,
+                               nvmlGpuThermalSettings_t* pThermalSettings ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetThermalSettings, device, sensorIndex, pThermalSettings);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetVgpuCapabilities ( nvmlDevice_t device, nvmlDeviceVgpuCapability_t capability, unsigned int* capResult ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetVgpuCapabilities, device, capability, capResult);
+}
+
+nvmlReturn_t 
+nvmlGetVgpuDriverCapabilities ( nvmlVgpuDriverCapability_t capability, unsigned int* capResult ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGetVgpuDriverCapabilities, capability, capResult);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetVgpuSchedulerCapabilities ( nvmlDevice_t device, nvmlVgpuSchedulerCapabilities_t* pCapabilities ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetVgpuSchedulerCapabilities, device, pCapabilities);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetVgpuSchedulerLog ( nvmlDevice_t device, nvmlVgpuSchedulerLog_t* pSchedulerLog ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetVgpuSchedulerLog, device, pSchedulerLog);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetVgpuSchedulerState ( nvmlDevice_t device, nvmlVgpuSchedulerGetState_t* pSchedulerState){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetVgpuSchedulerState, device, pSchedulerState);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetVgpuSchedulerState ( nvmlDevice_t device, nvmlVgpuSchedulerSetState_t* pSchedulerState ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetVgpuSchedulerState, device, pSchedulerState);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetConfComputeUnprotectedMemSize(nvmlDevice_t device, unsigned long long sizeKiB){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetConfComputeUnprotectedMemSize, device, sizeKiB);
+}
+
+nvmlReturn_t nvmlDeviceSetDefaultFanSpeed_v2 ( nvmlDevice_t device, unsigned int  fan){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetDefaultFanSpeed_v2, device, fan);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetFanControlPolicy ( nvmlDevice_t device, unsigned int  fan, nvmlFanControlPolicy_t policy ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetFanControlPolicy, device, fan, policy);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetFanSpeed_v2 ( nvmlDevice_t device, unsigned int  fan, unsigned int  speed ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetFanSpeed_v2, device, fan, speed);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetGpcClkVfOffset ( nvmlDevice_t device, int  offset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetGpcClkVfOffset, device, offset);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetMemClkVfOffset ( nvmlDevice_t device, int  offset ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetMemClkVfOffset, device, offset);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetNvLinkDeviceLowPowerThreshold(nvmlDevice_t device, nvmlNvLinkPowerThres_t *info){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetNvLinkDeviceLowPowerThreshold, device, info);
+}
+
+nvmlReturn_t 
+nvmlDeviceSetPowerManagementLimit_v2(nvmlDevice_t device, nvmlPowerValue_v2_t *powerValue){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceSetPowerManagementLimit_v2, device, powerValue);
+}
+
+nvmlReturn_t nvmlGpmMetricsGet(nvmlGpmMetricsGet_t *metricsGet){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmMetricsGet, metricsGet);
+}
+
+nvmlReturn_t 
+nvmlGpmMigSampleGet(nvmlDevice_t device, unsigned int gpuInstanceId, nvmlGpmSample_t gpmSample){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmMigSampleGet, device, gpuInstanceId, gpmSample);
+}
+
+nvmlReturn_t 
+nvmlGpmQueryDeviceSupport(nvmlDevice_t device, nvmlGpmSupport_t *gpmSupport){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmQueryDeviceSupport, gpmSupport);
+}
+
+nvmlReturn_t 
+nvmlGpmQueryIfStreamingEnabled(nvmlDevice_t device, unsigned int *state){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmQueryIfStreamingEnabled, device, state);
+}
+
+nvmlReturn_t nvmlGpmSampleAlloc(nvmlGpmSample_t *gpmSample){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmSampleAlloc, gpmSample);
+}
+
+nvmlReturn_t nvmlGpmSampleFree(nvmlGpmSample_t gpmSample){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmSampleFree, gpmSample);
+}
+
+nvmlReturn_t nvmlGpmSampleGet(nvmlDevice_t device, nvmlGpmSample_t gpmSample){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmSampleGet, device, gpmSample);
+}
+
+nvmlReturn_t 
+nvmlGpmSetStreamingEnabled(nvmlDevice_t device, unsigned int state){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpmSetStreamingEnabled, device, state);
+}
+
+nvmlReturn_t
+nvmlGpuInstanceCreateComputeInstanceWithPlacement ( nvmlGpuInstance_t gpuInstance, unsigned int  profileId, 
+                                const nvmlComputeInstancePlacement_t* placement, 
+                                nvmlComputeInstance_t* computeInstance ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpuInstanceCreateComputeInstanceWithPlacement, gpuInstance, profileId, placement, computeInstance);
+}
+
+nvmlReturn_t 
+nvmlGpuInstanceGetComputeInstancePossiblePlacements ( nvmlGpuInstance_t gpuInstance, unsigned int  profileId, 
+                                nvmlComputeInstancePlacement_t* placements, unsigned int* count ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpuInstanceGetComputeInstancePossiblePlacements, gpuInstance, profileId, placements, count);
+}
+
+nvmlReturn_t 
+nvmlGpuInstanceGetComputeInstanceProfileInfoV ( nvmlGpuInstance_t gpuInstance, unsigned int  profile, unsigned int  engProfile, nvmlComputeInstanceProfileInfo_v2_t* info ){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlGpuInstanceGetComputeInstanceProfileInfoV, gpuInstance, profile, engProfile, info);
+}
+
+nvmlReturn_t 
+nvmlSystemGetConfComputeCapabilities(nvmlConfComputeSystemCaps_t *capabilities){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemGetConfComputeCapabilities, capabilities);
+}
+
+nvmlReturn_t 
+nvmlSystemGetConfComputeGpusReadyState(unsigned int *isAcceptingWork){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemGetConfComputeGpusReadyState, isAcceptingWork);
+}
+
+nvmlReturn_t
+nvmlSystemGetConfComputeState(nvmlConfComputeSystemState_t *state){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemGetConfComputeState, state);
+}
+
+nvmlReturn_t nvmlSystemGetNvlinkBwMode(unsigned int *nvlinkBwMode){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemGetNvlinkBwMode, nvlinkBwMode);
+}
+
+nvmlReturn_t nvmlSystemSetConfComputeGpusReadyState(unsigned int isAcceptingWork){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemSetConfComputeGpusReadyState, isAcceptingWork);
+}
+
+nvmlReturn_t nvmlSystemSetNvlinkBwMode(unsigned int nvlinkBwMode){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlSystemSetNvlinkBwMode, nvlinkBwMode);
+}
+
+nvmlReturn_t 
+nvmlVgpuInstanceGetGpuPciId(nvmlVgpuInstance_t vgpuInstance, char *vgpuPciId, 
+                                                            unsigned int *length){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlVgpuInstanceGetGpuPciId, vgpuInstance, vgpuPciId, length);
+}
+
+nvmlReturn_t 
+nvmlVgpuInstanceGetLicenseInfo_v2(nvmlVgpuInstance_t vgpuInstance, nvmlVgpuLicenseInfo_t *licenseInfo){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlVgpuInstanceGetLicenseInfo_v2, vgpuInstance, licenseInfo);
+}
+
+nvmlReturn_t 
+nvmlVgpuTypeGetCapabilities(nvmlVgpuTypeId_t vgpuTypeId, nvmlVgpuCapability_t capability, unsigned int *capResult){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlVgpuTypeGetCapabilities, vgpuTypeId, capability, capResult);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetCurrentClocksEventReasons(nvmlDevice_t device, unsigned long long *clocksEventReasons){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetCurrentClocksEventReasons, device, clocksEventReasons);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetConfComputeProtectedMemoryUsage(nvmlDevice_t device, nvmlMemory_t *memory){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetConfComputeProtectedMemoryUsage, device, memory);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetConfComputeMemSizeInfo(nvmlDevice_t device, nvmlConfComputeMemSizeInfo_t *memInfo){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetConfComputeMemSizeInfo, device, memInfo);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetConfComputeGpuCertificate(nvmlDevice_t device,
+                                       nvmlConfComputeGpuCertificate_t *gpuCert){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetConfComputeGpuCertificate, device, gpuCert);
+}
+
+nvmlReturn_t 
+nvmlDeviceGetConfComputeGpuAttestationReport(nvmlDevice_t device,
+                                            nvmlConfComputeGpuAttestationReport_t *gpuAtstReport){
+  return NVML_ENTRY_CALL(nvml_library_entry, nvmlDeviceGetConfComputeGpuAttestationReport, device, gpuAtstReport);
 }

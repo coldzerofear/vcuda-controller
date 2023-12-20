@@ -1,8 +1,6 @@
 # stage 1
 FROM nvidia/cuda:11.2.2-devel-ubuntu18.04 as build
 
-RUN gpg --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC && \
-    gpg --export --armor A4B469963BF863CC | apt-key add -
 RUN apt update && apt install -y --no-install-recommends \
   curl
 
@@ -51,6 +49,6 @@ FROM centos:7
 
 ARG version
 ARG commit
-
-COPY --from=rpmpkg  /root/rpmbuild/RPMS/x86_64/vcuda-${version}-${commit}.el7.x86_64.rpm /tmp
-RUN rpm -ivh /tmp/vcuda-${version}-${commit}.el7.x86_64.rpm && rm -rf /tmp/vcuda-${version}-${commit}.el7.x86_64.rpm
+RUN yum install -y which jq
+COPY --from=rpmpkg  /root/rpmbuild/RPMS/aarch64/vcuda-${version}-${commit}.el7.aarch64.rpm /tmp
+RUN rpm -ivh /tmp/vcuda-${version}-${commit}.el7.aarch64.rpm && rm -rf /tmp/vcuda-${version}-${commit}.el7.aarch64.rpm

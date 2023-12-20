@@ -61,6 +61,8 @@ extern "C" {
 #define NVML_GRID_LICENSE_FEATURE_MAX_COUNT 3
 #define NVML_VGPU_NAME_BUFFER_SIZE 64
 
+#define NVML_MAX_GPU_UTILIZATIONS 8
+
 /**
  * Buffer size guaranteed to be large enough for \ref nvmlSystemGetDriverVersion
  */
@@ -78,7 +80,66 @@ typedef struct nvmlProcessInfo_st {
   unsigned long long usedGpuMemory; //!< Amount of used GPU memory in bytes.
   //! Under WDDM, \ref NVML_VALUE_NOT_AVAILABLE is always reported
   //! because Windows KMD manages all the memory and not the NVIDIA driver
+  // unsigned int  computeInstanceId; //!<If MIG is enabled, stores a valid compute instance ID. computeInstanceId is set to.
+  // unsigned int  gpuInstanceId; //!<If MIG is enabled, stores a valid GPU instance ID. gpuInstanceId is set to.
 } nvmlProcessInfo_t;
+
+typedef unsigned int nvmlPowerSource_t;
+
+#define NVML_MAX_THERMAL_SENSORS_PER_GPU  3
+
+typedef enum
+{
+    NVML_THERMAL_TARGET_NONE          = 0,
+    NVML_THERMAL_TARGET_GPU           = 1,     //!< GPU core temperature requires NvPhysicalGpuHandle
+    NVML_THERMAL_TARGET_MEMORY        = 2,     //!< GPU memory temperature requires NvPhysicalGpuHandle
+    NVML_THERMAL_TARGET_POWER_SUPPLY  = 4,     //!< GPU power supply temperature requires NvPhysicalGpuHandle
+    NVML_THERMAL_TARGET_BOARD         = 8,     //!< GPU board ambient temperature requires NvPhysicalGpuHandle
+    NVML_THERMAL_TARGET_VCD_BOARD     = 9,     //!< Visual Computing Device Board temperature requires NvVisualComputingDeviceHandle
+    NVML_THERMAL_TARGET_VCD_INLET     = 10,    //!< Visual Computing Device Inlet temperature requires NvVisualComputingDeviceHandle
+    NVML_THERMAL_TARGET_VCD_OUTLET    = 11,    //!< Visual Computing Device Outlet temperature requires NvVisualComputingDeviceHandle
+
+    NVML_THERMAL_TARGET_ALL           = 15,
+    NVML_THERMAL_TARGET_UNKNOWN       = -1,
+} nvmlThermalTarget_t;
+
+typedef enum
+{
+    NVML_THERMAL_CONTROLLER_NONE = 0,
+    NVML_THERMAL_CONTROLLER_GPU_INTERNAL,
+    NVML_THERMAL_CONTROLLER_ADM1032,
+    NVML_THERMAL_CONTROLLER_ADT7461,
+    NVML_THERMAL_CONTROLLER_MAX6649,
+    NVML_THERMAL_CONTROLLER_MAX1617,
+    NVML_THERMAL_CONTROLLER_LM99,
+    NVML_THERMAL_CONTROLLER_LM89,
+    NVML_THERMAL_CONTROLLER_LM64,
+    NVML_THERMAL_CONTROLLER_G781,
+    NVML_THERMAL_CONTROLLER_ADT7473,
+    NVML_THERMAL_CONTROLLER_SBMAX6649,
+    NVML_THERMAL_CONTROLLER_VBIOSEVT,
+    NVML_THERMAL_CONTROLLER_OS,
+    NVML_THERMAL_CONTROLLER_NVSYSCON_CANOAS,
+    NVML_THERMAL_CONTROLLER_NVSYSCON_E551,
+    NVML_THERMAL_CONTROLLER_MAX6649R,
+    NVML_THERMAL_CONTROLLER_ADT7473S,
+    NVML_THERMAL_CONTROLLER_UNKNOWN = -1,
+} nvmlThermalController_t;
+
+
+typedef struct
+{
+    unsigned int   count;
+    struct
+    {
+        nvmlThermalController_t controller;
+        int defaultMinTemp;
+        int defaultMaxTemp;
+        int currentTemp;
+        nvmlThermalTarget_t target;
+    } sensor[NVML_MAX_THERMAL_SENSORS_PER_GPU];
+
+} nvmlGpuThermalSettings_t;
 
 /**
  * Return values for NVML API calls.
@@ -117,9 +178,291 @@ typedef enum nvmlReturn_enum {
       18,                 //!< RM detects a driver/library version mismatch
   NVML_ERROR_IN_USE = 19, //!< An operation cannot be performed because the GPU
   //! is currently in use
-  NVML_ERROR_NO_DATA = 20, //!< No data
+  NVML_ERROR_MEMORY  = 20,                   //!< Insufficient memory
+  NVML_ERROR_NO_DATA = 21,                   //!< No data
+  NVML_ERROR_VGPU_ECC_NOT_SUPPORTED = 22,    //!< The requested vgpu operation is not available on target device, becasue ECC is enabled
+  NVML_ERROR_INSUFFICIENT_RESOURCES = 23,    //!< Ran out of critical resources, other than memory
+  NVML_ERROR_FREQ_NOT_SUPPORTED = 24,        //!< Ran out of critical resources, other than memory
+  NVML_ERROR_ARGUMENT_VERSION_MISMATCH = 25, //!< The provided version is invalid/unsupported
+  NVML_ERROR_DEPRECATED  = 26,               //!< The requested functionality has been deprecated
+  NVML_ERROR_NOT_READY = 27,                 //!< The system is not ready for the request
   NVML_ERROR_UNKNOWN = 999 //!< An internal driver error occurred
 } nvmlReturn_t;
+
+/**
+* Device vGPU queryable capabilities
+*/
+typedef enum nvmlDeviceVgpuCapability_enum
+{
+    NVML_DEVICE_VGPU_CAP_FRACTIONAL_MULTI_VGPU            = 0,    //!< Fractional vGPU profiles on this GPU can be used in multi-vGPU configurations
+    NVML_DEVICE_VGPU_CAP_HETEROGENEOUS_TIMESLICE_PROFILES = 1,    //!< Supports concurrent execution of timesliced vGPU profiles of differing types
+    NVML_DEVICE_VGPU_CAP_HETEROGENEOUS_TIMESLICE_SIZES    = 2,    //!< Supports concurrent execution of timesliced vGPU profiles of differing framebuffer sizes
+    NVML_DEVICE_VGPU_CAP_READ_DEVICE_BUFFER_BW            = 3,    //!< GPU device's read_device_buffer expected bandwidth capacity in megabytes per second
+    NVML_DEVICE_VGPU_CAP_WRITE_DEVICE_BUFFER_BW           = 4,    //!< GPU device's write_device_buffer expected bandwidth capacity in megabytes per second
+    // Keep this last
+    NVML_DEVICE_VGPU_CAP_COUNT
+} nvmlDeviceVgpuCapability_t;
+
+/**
+* vGPU driver queryable capabilities
+*/
+typedef enum nvmlVgpuDriverCapability_enum
+{
+    NVML_VGPU_DRIVER_CAP_HETEROGENEOUS_MULTI_VGPU = 0,      //!< Supports mixing of different vGPU profiles within one guest VM
+    // Keep this last
+    NVML_VGPU_DRIVER_CAP_COUNT
+} nvmlVgpuDriverCapability_t;
+
+/**
+ * vGPU scheduler policies
+ */
+#define NVML_VGPU_SCHEDULER_POLICY_UNKNOWN      0
+#define NVML_VGPU_SCHEDULER_POLICY_BEST_EFFORT  1
+#define NVML_VGPU_SCHEDULER_POLICY_EQUAL_SHARE  2
+#define NVML_VGPU_SCHEDULER_POLICY_FIXED_SHARE  3
+
+#define NVML_SUPPORTED_VGPU_SCHEDULER_POLICY_COUNT 3
+
+#define NVML_SCHEDULER_SW_MAX_LOG_ENTRIES 200
+
+#define NVML_VGPU_SCHEDULER_ARR_DEFAULT   0
+#define NVML_VGPU_SCHEDULER_ARR_DISABLE   1
+#define NVML_VGPU_SCHEDULER_ARR_ENABLE    2
+
+
+/**
+ * Structure to store the vGPU scheduler capabilities
+ */
+typedef struct nvmlVgpuSchedulerCapabilities_st
+{
+    unsigned int        supportedSchedulers[NVML_SUPPORTED_VGPU_SCHEDULER_POLICY_COUNT]; //!< List the supported vGPU schedulers on the device
+    unsigned int        maxTimeslice;                                                    //!< Maximum timeslice value in ns
+    unsigned int        minTimeslice;                                                    //!< Minimum timeslice value in ns
+    unsigned int        isArrModeSupported;                                              //!< Flag to check Adaptive Round Robin mode enabled/disabled.
+    unsigned int        maxFrequencyForARR;                                              //!< Maximum frequency for Adaptive Round Robin mode
+    unsigned int        minFrequencyForARR;                                              //!< Minimum frequency for Adaptive Round Robin mode
+    unsigned int        maxAvgFactorForARR;                                              //!< Maximum averaging factor for Adaptive Round Robin mode
+    unsigned int        minAvgFactorForARR;                                              //!< Minimum averaging factor for Adaptive Round Robin mode
+} nvmlVgpuSchedulerCapabilities_t;
+
+/**
+ * Union to represent the vGPU Scheduler Parameters
+ */
+typedef union
+{
+    struct
+    {
+        unsigned int    avgFactor;          //!< Average factor in compensating the timeslice for Adaptive Round Robin mode
+        unsigned int    timeslice;          //!< The timeslice in ns for each software run list as configured, or the default value otherwise
+    } vgpuSchedDataWithARR;
+
+    struct
+    {
+        unsigned int    timeslice;          //!< The timeslice in ns for each software run list as configured, or the default value otherwise
+    } vgpuSchedData;
+
+} nvmlVgpuSchedulerParams_t;
+
+/**
+ * Structure to store the state and logs of a software runlist
+ */
+typedef struct nvmlVgpuSchedulerLogEntries_st
+{
+    unsigned long long          timestamp;                  //!< Timestamp in ns when this software runlist was preeempted
+    unsigned long long          timeRunTotal;               //!< Total time in ns this software runlist has run
+    unsigned long long          timeRun;                    //!< Time in ns this software runlist ran before preemption
+    unsigned int                swRunlistId;                //!< Software runlist Id
+    unsigned long long          targetTimeSlice;            //!< The actual timeslice after deduction
+    unsigned long long          cumulativePreemptionTime;   //!< Preemption time in ns for this SW runlist
+} nvmlVgpuSchedulerLogEntry_t;
+
+/**
+ * Structure to store a vGPU software scheduler log
+ */
+typedef struct nvmlVgpuSchedulerLog_st
+{
+    unsigned int                engineId;                                       //!< Engine whose software runlist log entries are fetched
+    unsigned int                schedulerPolicy;                                //!< Scheduler policy
+    unsigned int                arrMode;                                        //!< Adaptive Round Robin scheduler mode. One of the NVML_VGPU_SCHEDULER_ARR_*.
+    nvmlVgpuSchedulerParams_t   schedulerParams;
+    unsigned int                entriesCount;                                   //!< Count of log entries fetched
+    nvmlVgpuSchedulerLogEntry_t logEntries[NVML_SCHEDULER_SW_MAX_LOG_ENTRIES];
+} nvmlVgpuSchedulerLog_t;
+
+/**
+ * Structure to store the vGPU scheduler state
+ */
+typedef struct nvmlVgpuSchedulerGetState_st
+{
+    unsigned int                schedulerPolicy;    //!< Scheduler policy
+    unsigned int                arrMode;            //!< Adaptive Round Robin scheduler mode. One of the NVML_VGPU_SCHEDULER_ARR_*.
+    nvmlVgpuSchedulerParams_t   schedulerParams;
+} nvmlVgpuSchedulerGetState_t;
+
+/**
+ * Union to represent the vGPU Scheduler set Parameters
+ */
+typedef union
+{
+    struct
+    {
+        unsigned int    avgFactor;          //!< Average factor in compensating the timeslice for Adaptive Round Robin mode
+        unsigned int    frequency;          //!< Frequency for Adaptive Round Robin mode
+    } vgpuSchedDataWithARR;
+
+    struct
+    {
+        unsigned int    timeslice;          //!< The timeslice in ns(Nanoseconds) for each software run list as configured, or the default value otherwise
+    } vgpuSchedData;
+
+} nvmlVgpuSchedulerSetParams_t;
+
+/**
+ * Structure to set the vGPU scheduler state
+ */
+typedef struct nvmlVgpuSchedulerSetState_st
+{
+    unsigned int                    schedulerPolicy;    //!< Scheduler policy
+    unsigned int                    enableARRMode;      //!< Adaptive Round Robin scheduler
+    nvmlVgpuSchedulerSetParams_t    schedulerParams;
+} nvmlVgpuSchedulerSetState_t;
+
+/**
+ * GPM Metric Identifiers
+ */
+typedef enum
+{
+    NVML_GPM_METRIC_GRAPHICS_UTIL           = 1,    //!< Percentage of time any compute/graphics app was active on the GPU. 0.0 - 100.0
+    NVML_GPM_METRIC_SM_UTIL                 = 2,    //!< Percentage of SMs that were busy. 0.0 - 100.0
+    NVML_GPM_METRIC_SM_OCCUPANCY            = 3,    //!< Percentage of warps that were active vs theoretical maximum. 0.0 - 100.0
+    NVML_GPM_METRIC_INTEGER_UTIL            = 4,    //!< Percentage of time the GPU's SMs were doing integer operations. 0.0 - 100.0
+    NVML_GPM_METRIC_ANY_TENSOR_UTIL         = 5,    //!< Percentage of time the GPU's SMs were doing ANY tensor operations. 0.0 - 100.0
+    NVML_GPM_METRIC_DFMA_TENSOR_UTIL        = 6,    //!< Percentage of time the GPU's SMs were doing DFMA tensor operations. 0.0 - 100.0
+    NVML_GPM_METRIC_HMMA_TENSOR_UTIL        = 7,    //!< Percentage of time the GPU's SMs were doing HMMA tensor operations. 0.0 - 100.0
+    NVML_GPM_METRIC_IMMA_TENSOR_UTIL        = 9,    //!< Percentage of time the GPU's SMs were doing IMMA tensor operations. 0.0 - 100.0
+    NVML_GPM_METRIC_DRAM_BW_UTIL            = 10,   //!< Percentage of DRAM bw used vs theoretical maximum. 0.0 - 100.0 */
+    NVML_GPM_METRIC_FP64_UTIL               = 11,   //!< Percentage of time the GPU's SMs were doing non-tensor FP64 math. 0.0 - 100.0
+    NVML_GPM_METRIC_FP32_UTIL               = 12,   //!< Percentage of time the GPU's SMs were doing non-tensor FP32 math. 0.0 - 100.0
+    NVML_GPM_METRIC_FP16_UTIL               = 13,   //!< Percentage of time the GPU's SMs were doing non-tensor FP16 math. 0.0 - 100.0
+    NVML_GPM_METRIC_PCIE_TX_PER_SEC         = 20,   //!< PCIe traffic from this GPU in MiB/sec
+    NVML_GPM_METRIC_PCIE_RX_PER_SEC         = 21,   //!< PCIe traffic to this GPU in MiB/sec
+    NVML_GPM_METRIC_NVDEC_0_UTIL            = 30,   //!< Percent utilization of NVDEC 0. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_1_UTIL            = 31,   //!< Percent utilization of NVDEC 1. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_2_UTIL            = 32,   //!< Percent utilization of NVDEC 2. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_3_UTIL            = 33,   //!< Percent utilization of NVDEC 3. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_4_UTIL            = 34,   //!< Percent utilization of NVDEC 4. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_5_UTIL            = 35,   //!< Percent utilization of NVDEC 5. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_6_UTIL            = 36,   //!< Percent utilization of NVDEC 6. 0.0 - 100.0
+    NVML_GPM_METRIC_NVDEC_7_UTIL            = 37,   //!< Percent utilization of NVDEC 7. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_0_UTIL            = 40,   //!< Percent utilization of NVJPG 0. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_1_UTIL            = 41,   //!< Percent utilization of NVJPG 1. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_2_UTIL            = 42,   //!< Percent utilization of NVJPG 2. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_3_UTIL            = 43,   //!< Percent utilization of NVJPG 3. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_4_UTIL            = 44,   //!< Percent utilization of NVJPG 4. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_5_UTIL            = 45,   //!< Percent utilization of NVJPG 5. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_6_UTIL            = 46,   //!< Percent utilization of NVJPG 6. 0.0 - 100.0
+    NVML_GPM_METRIC_NVJPG_7_UTIL            = 47,   //!< Percent utilization of NVJPG 7. 0.0 - 100.0
+    NVML_GPM_METRIC_NVOFA_0_UTIL            = 50,   //!< Percent utilization of NVOFA 0. 0.0 - 100.0
+    NVML_GPM_METRIC_NVLINK_TOTAL_RX_PER_SEC = 60,   //!< NvLink read bandwidth for all links in MiB/sec
+    NVML_GPM_METRIC_NVLINK_TOTAL_TX_PER_SEC = 61,   //!< NvLink write bandwidth for all links in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L0_RX_PER_SEC    = 62,   //!< NvLink read bandwidth for link 0 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L0_TX_PER_SEC    = 63,   //!< NvLink write bandwidth for link 0 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L1_RX_PER_SEC    = 64,   //!< NvLink read bandwidth for link 1 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L1_TX_PER_SEC    = 65,   //!< NvLink write bandwidth for link 1 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L2_RX_PER_SEC    = 66,   //!< NvLink read bandwidth for link 2 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L2_TX_PER_SEC    = 67,   //!< NvLink write bandwidth for link 2 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L3_RX_PER_SEC    = 68,   //!< NvLink read bandwidth for link 3 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L3_TX_PER_SEC    = 69,   //!< NvLink write bandwidth for link 3 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L4_RX_PER_SEC    = 70,   //!< NvLink read bandwidth for link 4 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L4_TX_PER_SEC    = 71,   //!< NvLink write bandwidth for link 4 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L5_RX_PER_SEC    = 72,   //!< NvLink read bandwidth for link 5 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L5_TX_PER_SEC    = 73,   //!< NvLink write bandwidth for link 5 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L6_RX_PER_SEC    = 74,   //!< NvLink read bandwidth for link 6 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L6_TX_PER_SEC    = 75,   //!< NvLink write bandwidth for link 6 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L7_RX_PER_SEC    = 76,   //!< NvLink read bandwidth for link 7 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L7_TX_PER_SEC    = 77,   //!< NvLink write bandwidth for link 7 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L8_RX_PER_SEC    = 78,   //!< NvLink read bandwidth for link 8 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L8_TX_PER_SEC    = 79,   //!< NvLink write bandwidth for link 8 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L9_RX_PER_SEC    = 80,   //!< NvLink read bandwidth for link 9 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L9_TX_PER_SEC    = 81,   //!< NvLink write bandwidth for link 9 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L10_RX_PER_SEC   = 82,   //!< NvLink read bandwidth for link 10 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L10_TX_PER_SEC   = 83,   //!< NvLink write bandwidth for link 10 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L11_RX_PER_SEC   = 84,   //!< NvLink read bandwidth for link 11 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L11_TX_PER_SEC   = 85,   //!< NvLink write bandwidth for link 11 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L12_RX_PER_SEC   = 86,   //!< NvLink read bandwidth for link 12 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L12_TX_PER_SEC   = 87,   //!< NvLink write bandwidth for link 12 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L13_RX_PER_SEC   = 88,   //!< NvLink read bandwidth for link 13 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L13_TX_PER_SEC   = 89,   //!< NvLink write bandwidth for link 13 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L14_RX_PER_SEC   = 90,   //!< NvLink read bandwidth for link 14 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L14_TX_PER_SEC   = 91,   //!< NvLink write bandwidth for link 14 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L15_RX_PER_SEC   = 92,   //!< NvLink read bandwidth for link 15 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L15_TX_PER_SEC   = 93,   //!< NvLink write bandwidth for link 15 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L16_RX_PER_SEC   = 94,   //!< NvLink read bandwidth for link 16 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L16_TX_PER_SEC   = 95,   //!< NvLink write bandwidth for link 16 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L17_RX_PER_SEC   = 96,   //!< NvLink read bandwidth for link 17 in MiB/sec
+    NVML_GPM_METRIC_NVLINK_L17_TX_PER_SEC   = 97,   //!< NvLink write bandwidth for link 17 in MiB/sec
+    NVML_GPM_METRIC_MAX                     = 98,   //!< Maximum value above +1. Note that changing this should also change NVML_GPM_METRICS_GET_VERSION due to struct size change
+} nvmlGpmMetricId_t;
+
+
+/**
+ * Handle to an allocated GPM sample allocated with nvmlGpmSampleAlloc(). Free this with nvmlGpmSampleFree().
+ */
+typedef struct nvmlGpmSample_st* nvmlGpmSample_t;
+
+/**
+ * GPM metric information.
+ */
+typedef struct
+{
+    unsigned int metricId;   //!<  IN: NVML_GPM_METRIC_? #define of which metric to retrieve
+    nvmlReturn_t nvmlReturn; //!<  OUT: Status of this metric. If this is nonzero, then value is not valid
+    double value;            //!<  OUT: Value of this metric. Is only valid if nvmlReturn is 0 (NVML_SUCCESS)
+    struct
+    {
+        char *shortName;
+        char *longName;
+        char *unit;
+    } metricInfo;            //!< OUT: Metric name and unit. Those can be NULL if not defined
+} nvmlGpmMetric_t;
+
+/**
+ * GPM buffer information.
+ */
+typedef struct
+{
+    unsigned int version;                              //!< IN: Set to NVML_GPM_METRICS_GET_VERSION
+    unsigned int numMetrics;                           //!< IN: How many metrics to retrieve in metrics[]
+    nvmlGpmSample_t sample1;                           //!< IN: Sample buffer
+    nvmlGpmSample_t sample2;                           //!< IN: Sample buffer
+    nvmlGpmMetric_t metrics[NVML_GPM_METRIC_MAX];      //!< IN/OUT: Array of metrics. Set metricId on call. See nvmlReturn and value on return
+} nvmlGpmMetricsGet_t;
+
+/**
+ * GPM device information.
+ */
+typedef struct
+{
+    unsigned int version;           //!< IN: Set to NVML_GPM_SUPPORT_VERSION
+    unsigned int isSupportedDevice; //!< OUT: Indicates device support
+} nvmlGpmSupport_t;
+
+typedef unsigned int nvmlFanControlPolicy_t;
+
+/* Structure containing Low Power parameters */
+typedef struct nvmlNvLinkPowerThres_st
+{
+    unsigned int lowPwrThreshold;           //!< Low power threshold (in units of 100us)
+} nvmlNvLinkPowerThres_t;
+
+typedef unsigned char nvmlPowerScopeType_t;
+
+typedef struct
+{
+    unsigned int         version;       //!< Structure format version (must be 1)
+    nvmlPowerScopeType_t powerScope;    //!< [in]  Device type: GPU or Total Module
+    unsigned int         powerValueMw;  //!< [out] Power value to retrieve or set in milliwatts
+} nvmlPowerValue_v2_t;
 
 /**
  * PCI information about a GPU device.
@@ -185,6 +528,60 @@ typedef enum nvmlEnableState_enum {
   NVML_FEATURE_ENABLED = 1   //!< Feature enabled
 } nvmlEnableState_t;
 
+typedef struct nvmlGpuDynamicPstatesInfo_st
+{
+    unsigned int       flags;          //!< Reserved for future use
+    struct
+    {
+        unsigned int   bIsPresent;     //!< Set if this utilization domain is present on this GPU
+        unsigned int   percentage;     //!< Percentage of time where the domain is considered busy in the last 1-second interval
+        unsigned int   incThreshold;   //!< Utilization threshold that can trigger a perf-increasing P-State change when crossed
+        unsigned int   decThreshold;   //!< Utilization threshold that can trigger a perf-decreasing P-State change when crossed
+    } utilization[NVML_MAX_GPU_UTILIZATIONS];
+} nvmlGpuDynamicPstatesInfo_t;
+
+#define NVML_GPU_FABRIC_UUID_LEN 16
+
+typedef unsigned char nvmlGpuFabricState_t;
+
+typedef struct {
+    char                 clusterUuid[NVML_GPU_FABRIC_UUID_LEN]; //!< Uuid of the cluster to which this GPU belongs
+    nvmlReturn_t         status;                                //!< Error status, if any. Must be checked only if state returns "complete".
+    unsigned int         partitionId;                           //!< ID of the fabric partition to which this GPU belongs
+    nvmlGpuFabricState_t state;                                 //!< Current state of GPU registration process
+} nvmlGpuFabricInfo_t;
+
+
+/**
+ * Buffer size guaranteed to be large enough for \ref nvmlDeviceGetName
+ */
+#define NVML_DEVICE_NAME_V2_BUFFER_SIZE               96
+
+/**
+ * GPU instance profile information (v2).
+ * 
+ * Version 2 adds the \ref nvmlGpuInstanceProfileInfo_v2_t.version field
+ * to the start of the structure, and the \ref nvmlGpuInstanceProfileInfo_v2_t.name
+ * field to the end. This structure is not backwards-compatible with
+ * \ref nvmlGpuInstanceProfileInfo_t.
+ */
+typedef struct nvmlGpuInstanceProfileInfo_v2_st
+{
+    unsigned int version;                       //!< Structure version identifier (set to \ref nvmlGpuInstanceProfileInfo_v2)
+    unsigned int id;                            //!< Unique profile ID within the device
+    unsigned int isP2pSupported;                //!< Peer-to-Peer support
+    unsigned int sliceCount;                    //!< GPU Slice count
+    unsigned int instanceCount;                 //!< GPU instance count
+    unsigned int multiprocessorCount;           //!< Streaming Multiprocessor count
+    unsigned int copyEngineCount;               //!< Copy Engine count
+    unsigned int decoderCount;                  //!< Decoder Engine count
+    unsigned int encoderCount;                  //!< Encoder Engine count
+    unsigned int jpegCount;                     //!< JPEG Engine count
+    unsigned int ofaCount;                      //!< OFA Engine count
+    unsigned long long memorySizeMB;            //!< Memory size in MBytes
+    char name[NVML_DEVICE_NAME_V2_BUFFER_SIZE]; //!< Profile name
+} nvmlGpuInstanceProfileInfo_v2_t;
+
 /**
  * Describes accounting statistics of a process.
  */
@@ -222,6 +619,8 @@ typedef struct nvmlAccountingStats_st {
 } nvmlAccountingStats_t;
 
 typedef unsigned int nvmlVgpuInstance_t;
+
+typedef unsigned int nvmlFanControlPolicy_t;
 
 /**
  * API types that allow changes to default permission restrictions
@@ -358,6 +757,21 @@ typedef struct nvmlEccErrorCounts_st {
   unsigned long long deviceMemory; //!< Device memory errors
   unsigned long long registerFile; //!< Register file errors
 } nvmlEccErrorCounts_t;
+
+/**
+ * vGPU queryable capabilities
+ */
+typedef enum nvmlVgpuCapability_enum
+{
+    NVML_VGPU_CAP_NVLINK_P2P                    = 0,  //!< P2P over NVLink is supported
+    NVML_VGPU_CAP_GPUDIRECT                     = 1,  //!< GPUDirect capability is supported
+    NVML_VGPU_CAP_MULTI_VGPU_EXCLUSIVE          = 2,  //!< vGPU profile cannot be mixed with other vGPU profiles in same VM
+    NVML_VGPU_CAP_EXCLUSIVE_TYPE                = 3,  //!< vGPU profile cannot run on a GPU alongside other profiles of different type
+    NVML_VGPU_CAP_EXCLUSIVE_SIZE                = 4,  //!< vGPU profile cannot run on a GPU alongside other profiles of different size
+    // Keep this last
+    NVML_VGPU_CAP_COUNT
+} nvmlVgpuCapability_t;
+
 
 /**
  * Driver models.
@@ -552,6 +966,61 @@ typedef struct nvmlMemory_st {
       used; //!< Allocated FB memory (in bytes). Note that the driver/GPU
   //!< always sets aside a small amount of memory for bookkeeping
 } nvmlMemory_t;
+
+/**
+ * Memory allocation information for a device (v2).
+ * 
+ * Version 2 adds versioning for the struct and the amount of system-reserved memory as an output.
+ * @note The \ref nvmlMemory_v2_t.used amount also includes the \ref nvmlMemory_v2_t.reserved amount.
+ */
+typedef struct nvmlMemory_v2_st
+{
+    unsigned int version;            //!< Structure format version (must be 2)
+    unsigned long long total;        //!< Total physical device memory (in bytes)
+    unsigned long long reserved;     //!< Device memory (in bytes) reserved for system use (driver or firmware)
+    unsigned long long free;         //!< Unallocated device memory (in bytes)
+    unsigned long long used;         //!< Allocated device memory (in bytes). Note that the driver/GPU always sets aside a small amount of memory for bookkeeping
+} nvmlMemory_v2_t;
+
+/**
+ * Protected memory size
+ */
+typedef struct nvmlConfComputeMemSizeInfo_st
+{
+    unsigned long long protectedMemSizeKib;
+    unsigned long long unprotectedMemSizeKib;
+} nvmlConfComputeMemSizeInfo_t;
+
+/**
+ * GPU Certificate Details
+ */
+#define NVML_GPU_CERT_CHAIN_SIZE 0x1000
+#define NVML_GPU_ATTESTATION_CERT_CHAIN_SIZE 0x1400
+
+typedef struct nvmlConfComputeGpuCertificate_st {
+    unsigned int certChainSize;
+    unsigned int attestationCertChainSize;
+    unsigned char certChain[NVML_GPU_CERT_CHAIN_SIZE];
+    unsigned char attestationCertChain[NVML_GPU_ATTESTATION_CERT_CHAIN_SIZE];
+} nvmlConfComputeGpuCertificate_t;
+
+/**
+ * GPU Attestation Report
+ */
+#define NVML_CC_GPU_CEC_NONCE_SIZE 0x20
+#define NVML_CC_GPU_ATTESTATION_REPORT_SIZE 0x2000
+#define NVML_CC_GPU_CEC_ATTESTATION_REPORT_SIZE 0x1000
+#define NVML_CC_CEC_ATTESTATION_REPORT_NOT_PRESENT 0
+#define NVML_CC_CEC_ATTESTATION_REPORT_PRESENT 1
+
+typedef struct nvmlConfComputeGpuAttestationReport_st {
+    unsigned int isCecAttestationReportPresent;
+    unsigned int attestationReportSize;
+    unsigned int cecAttestationReportSize;
+    unsigned char nonce[NVML_CC_GPU_CEC_NONCE_SIZE];
+    unsigned char attestationReport[NVML_CC_GPU_ATTESTATION_REPORT_SIZE];
+    unsigned char cecAttestationReport[NVML_CC_GPU_CEC_ATTESTATION_REPORT_SIZE];
+} nvmlConfComputeGpuAttestationReport_t;
 
 /**
  * Enum to represent NvLink queryable capabilities
@@ -1152,6 +1621,12 @@ typedef struct nvmlComputeInstanceInfo_st {
   unsigned int profileId;        //!< Unique profile ID within the GPU instance
 } nvmlComputeInstanceInfo_t;
 
+typedef struct nvmlComputeInstancePlacement_st
+{
+    unsigned int start;                 //!< Index of first occupied compute slice
+    unsigned int size;                  //!< Number of compute slices occupied
+} nvmlComputeInstancePlacement_t;
+
 typedef struct nvmlComputeInstance_st *nvmlComputeInstance_t;
 
 typedef unsigned int nvmlDeviceArchitecture_t;
@@ -1204,6 +1679,40 @@ typedef struct nvmlGpuInstanceInfo_st {
   unsigned int profileId; //!< Unique profile ID within the device
   nvmlGpuInstancePlacement_t placement; //!< Placement for this instance
 } nvmlGpuInstanceInfo_t;
+
+/**
+ * Compute instance profile information (v2).
+ *
+ * Version 2 adds the \ref nvmlComputeInstanceProfileInfo_v2_t.version field
+ * to the start of the structure, and the \ref nvmlComputeInstanceProfileInfo_v2_t.name
+ * field to the end. This structure is not backwards-compatible with
+ * \ref nvmlComputeInstanceProfileInfo_t.
+ */
+typedef struct nvmlComputeInstanceProfileInfo_v2_st
+{
+    unsigned int version;                       //!< Structure version identifier (set to \ref nvmlComputeInstanceProfileInfo_v2)
+    unsigned int id;                            //!< Unique profile ID within the GPU instance
+    unsigned int sliceCount;                    //!< GPU Slice count
+    unsigned int instanceCount;                 //!< Compute instance count
+    unsigned int multiprocessorCount;           //!< Streaming Multiprocessor count
+    unsigned int sharedCopyEngineCount;         //!< Shared Copy Engine count
+    unsigned int sharedDecoderCount;            //!< Shared Decoder Engine count
+    unsigned int sharedEncoderCount;            //!< Shared Encoder Engine count
+    unsigned int sharedJpegCount;               //!< Shared JPEG Engine count
+    unsigned int sharedOfaCount;                //!< Shared OFA Engine count
+    char name[NVML_DEVICE_NAME_V2_BUFFER_SIZE]; //!< Profile name
+} nvmlComputeInstanceProfileInfo_v2_t;
+
+typedef struct nvmlConfComputeSystemCaps_st {
+    unsigned int cpuCaps;
+    unsigned int gpusCaps;
+} nvmlConfComputeSystemCaps_t;
+
+typedef struct nvmlConfComputeSystemState_st {
+    unsigned int environment;
+    unsigned int ccFeature;
+    unsigned int devToolsMode;
+} nvmlConfComputeSystemState_t;
 
 /**
  * Possible values that classify the remap availability for each bank. The max
@@ -1306,6 +1815,16 @@ typedef struct nvmlVgpuLicenseInfo_st {
   unsigned char isLicensed;              //!< License status
   nvmlVgpuLicenseExpiry_t licenseExpiry; //!< License expiry information
 } nvmlVgpuLicenseInfo_t;
+
+typedef struct CUlaunchConfig_st {
+  unsigned int gridDimX;
+  unsigned int gridDimY;
+  unsigned int gridDimZ;
+  unsigned int blockDimX;
+  unsigned int blockDimY;
+  unsigned int blockDimZ;
+} CUlaunchConfig;
+
 
 #ifdef __cplusplus
 }

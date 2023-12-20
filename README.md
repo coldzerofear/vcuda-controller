@@ -15,8 +15,13 @@ paper [here](https://ieeexplore.ieee.org/abstract/document/8672318).
 IMAGE_FILE=<your image name without version> ./build-img.sh
 ```
 
+## 查找cuda新增函数
+```bash
+./find_new_lib.sh /lib/x86_64-linux-gnu/libcuda.so.535.54.03 /lib/x86_64-linux-gnu/libnvidia-ml.so.535.54.03
+```
+
 ## CUDA/GPU support information
 
-CUDA 11.5.1 and before are supported
+CUDA 12.2.0 and before are supporteds
 
 Any architecture of GPU after Kepler are supported

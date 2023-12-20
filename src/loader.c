@@ -167,6 +167,8 @@ entry_t cuda_library_entry[] = {
     {.name = "cuSurfObjectGetResourceDesc"},
     {.name = "cuLaunchKernel"},
     {.name = "cuLaunchKernel_ptsz"},
+    {.name = "cuLaunchKernelEx"},
+    {.name = "cuLaunchKernelEx_ptsz"},
     {.name = "cuEventCreate"},
     {.name = "cuEventRecord"},
     {.name = "cuEventRecord_ptsz"},
@@ -238,8 +240,11 @@ entry_t cuda_library_entry[] = {
     {.name = "cuGetExportTable"},
     {.name = "cuOccupancyMaxActiveBlocksPerMultiprocessor"},
     {.name = "cuMemAdvise"},
+    {.name = "cuMemAdvise_v2"},
     {.name = "cuMemPrefetchAsync"},
     {.name = "cuMemPrefetchAsync_ptsz"},
+    {.name = "cuMemPrefetchAsync_v2"},
+    {.name = "cuMemPrefetchAsync_v2_ptsz"},
     {.name = "cuMemRangeGetAttribute"},
     {.name = "cuMemRangeGetAttributes"},
     {.name = "cuGetErrorString"},
@@ -368,8 +373,10 @@ entry_t cuda_library_entry[] = {
     {.name = "cuModuleGetGlobal"},
     {.name = "cuModuleLoadDataEx"},
     {.name = "cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags"},
+    {.name = "cuOccupancyMaxActiveClusters"},
     {.name = "cuOccupancyMaxPotentialBlockSize"},
     {.name = "cuOccupancyMaxPotentialBlockSizeWithFlags"},
+    {.name = "cuOccupancyMaxPotentialClusterSize"},
     {.name = "cuParamSetf"},
     {.name = "cuParamSeti"},
     {.name = "cuParamSetSize"},
@@ -550,6 +557,7 @@ entry_t cuda_library_entry[] = {
     {.name = "cuDeviceSetGraphMemAttribute"},
     {.name = "cuFlushGPUDirectRDMAWrites"},
     {.name = "cuGetProcAddress"},
+    {.name = "cuGetProcAddress_v2"},
     {.name = "cuGraphAddMemAllocNode"},
     {.name = "cuGraphAddMemFreeNode"},
     {.name = "cuGraphDebugDotPrint"},
@@ -565,6 +573,58 @@ entry_t cuda_library_entry[] = {
     {.name = "cuUserObjectCreate"},
     {.name = "cuUserObjectRelease"},
     {.name = "cuUserObjectRetain"},
+    {.name = "cuArrayGetMemoryRequirements"},
+    {.name = "cuMipmappedArrayGetMemoryRequirements"},
+    {.name = "cuStreamWaitValue32_v2"},
+    {.name = "cuStreamWaitValue64_v2"},
+    {.name = "cuStreamWriteValue32_v2"},
+    {.name = "cuStreamWriteValue64_v2"},
+    {.name = "cuStreamBatchMemOp_v2"},
+    {.name = "cuGraphAddBatchMemOpNode"},
+    {.name = "cuGraphBatchMemOpNodeGetParams"},
+    {.name = "cuGraphBatchMemOpNodeSetParams"},
+    {.name = "cuGraphExecBatchMemOpNodeSetParams"},
+    {.name = "cuGraphNodeGetEnabled"},
+    {.name = "cuGraphNodeSetEnabled"},
+    {.name = "cuModuleGetLoadingMode"},
+    {.name = "cuMemGetHandleForAddressRange"},
+
+    {.name = "cuGraphAddNode"},
+    {.name = "cuGraphAddNode_v2"},
+    {.name = "cuGraphExecGetFlags"},
+    {.name = "cuGraphExecNodeSetParams"},
+    {.name = "cuGraphInstantiateWithParams"},
+    {.name = "cuGraphInstantiateWithParams_ptsz"},
+    {.name = "cuGraphNodeSetParams"},
+    {.name = "cuStreamGetId"},
+    {.name = "cuStreamGetId_ptsz"},
+    {.name = "cuCoredumpGetAttribute"},
+    {.name = "cuCoredumpGetAttributeGlobal"},
+    {.name = "cuCoredumpSetAttribute"},
+    {.name = "cuCoredumpSetAttributeGlobal"},
+    {.name = "cuCtxGetId"},
+    {.name = "cuCtxSetFlags"},
+    {.name = "cuKernelGetAttribute"},
+    {.name = "cuKernelGetFunction"},
+    {.name = "cuKernelSetAttribute"},
+    {.name = "cuKernelSetCacheConfig"},
+    {.name = "cuLibraryGetGlobal"},
+    {.name = "cuLibraryGetKernel"},
+    {.name = "cuLibraryGetManaged"},
+    {.name = "cuLibraryGetModule"},
+    {.name = "cuLibraryGetUnifiedFunction"},
+    {.name = "cuLibraryLoadData"},
+    {.name = "cuLibraryLoadFromFile"},
+    {.name = "cuLibraryUnload"},
+    {.name = "cuMulticastAddDevice"},
+    {.name = "cuMulticastBindAddr"},
+    {.name = "cuMulticastBindMem"},
+    {.name = "cuMulticastCreate"},
+    {.name = "cuMulticastGetGranularity"},
+    {.name = "cuMulticastUnbind"},
+    {.name = "cuTensorMapEncodeIm2col"},
+    {.name = "cuTensorMapEncodeTiled"},
+    {.name = "cuTensorMapReplaceAddress"},
 };
 
 entry_t nvml_library_entry[] = {
@@ -637,6 +697,7 @@ entry_t nvml_library_entry[] = {
     {.name = "nvmlDeviceGetMaxPcieLinkWidth"},
     {.name = "nvmlDeviceGetMemoryErrorCounter"},
     {.name = "nvmlDeviceGetMemoryInfo"},
+    {.name = "nvmlDeviceGetMemoryInfo_v2"},
     {.name = "nvmlDeviceGetMinorNumber"},
     {.name = "nvmlDeviceGetMPSComputeRunningProcesses"},
     {.name = "nvmlDeviceGetMultiGpuBoard"},
@@ -827,6 +888,79 @@ entry_t nvml_library_entry[] = {
     {.name = "nvmlGetExcludedDeviceCount"},
     {.name = "nvmlGetExcludedDeviceInfoByIndex"},
     {.name = "nvmlVgpuInstanceGetLicenseInfo"},
+
+    {.name = "nvmlDeviceClearFieldValues"},
+    {.name = "nvmlDeviceGetAdaptiveClockInfoStatus"},
+    {.name = "nvmlDeviceGetComputeRunningProcesses_v3"},
+    {.name = "nvmlDeviceGetDefaultEccMode"},
+    {.name = "nvmlDeviceGetDynamicPstatesInfo"},
+    // {.name = "nvmlDeviceGetFanControlPolicy"},
+    {.name = "nvmlDeviceGetFanControlPolicy_v2"},
+    {.name = "nvmlDeviceGetGpcClkMinMaxVfOffset"},
+    {.name = "nvmlDeviceGetGpcClkVfOffset"},
+    {.name = "nvmlDeviceGetGpuFabricInfo"},
+    {.name = "nvmlDeviceGetGpuInstanceProfileInfoV"},
+    {.name = "nvmlDeviceGetGpuMaxPcieLinkGeneration"},
+    {.name = "nvmlDeviceGetGraphicsRunningProcesses_v3"},
+    {.name = "nvmlDeviceGetGspFirmwareMode"},
+    {.name = "nvmlDeviceGetGspFirmwareVersion"},
+    {.name = "nvmlDeviceGetJpgUtilization"},
+    {.name = "nvmlDeviceGetMemClkMinMaxVfOffset"},
+    {.name = "nvmlDeviceGetMemClkVfOffset"},
+    {.name = "nvmlDeviceGetMemoryBusWidth"},
+    {.name = "nvmlDeviceGetMinMaxClockOfPState"},
+    {.name = "nvmlDeviceGetMinMaxFanSpeed"},
+    {.name = "nvmlDeviceGetModuleId"},
+    {.name = "nvmlDeviceGetMPSComputeRunningProcesses_v3"},
+    {.name = "nvmlDeviceGetNumFans"},
+    {.name = "nvmlDeviceGetNumGpuCores"},
+    {.name = "nvmlDeviceGetOfaUtilization"},
+    {.name = "nvmlDeviceGetPcieLinkMaxSpeed"},
+    {.name = "nvmlDeviceGetPcieSpeed"},
+    {.name = "nvmlDeviceGetPowerSource"},
+    {.name = "nvmlDeviceGetSupportedClocksEventReasons"},
+    {.name = "nvmlDeviceGetSupportedPerformanceStates"},
+    {.name = "nvmlDeviceGetTargetFanSpeed"},
+    {.name = "nvmlDeviceGetThermalSettings"},
+    {.name = "nvmlDeviceGetVgpuCapabilities"},
+    {.name = "nvmlGetVgpuDriverCapabilities"},
+    {.name = "nvmlDeviceGetVgpuSchedulerCapabilities"},
+    {.name = "nvmlDeviceGetVgpuSchedulerLog"},
+    {.name = "nvmlDeviceGetVgpuSchedulerState"},
+    {.name = "nvmlDeviceSetVgpuSchedulerState"},
+    {.name = "nvmlDeviceSetConfComputeUnprotectedMemSize"},
+    {.name = "nvmlDeviceSetDefaultFanSpeed_v2"},
+    {.name = "nvmlDeviceSetFanControlPolicy"},
+    {.name = "nvmlDeviceSetFanSpeed_v2"},
+    {.name = "nvmlDeviceSetGpcClkVfOffset"},
+    {.name = "nvmlDeviceSetMemClkVfOffset"},
+    {.name = "nvmlDeviceSetNvLinkDeviceLowPowerThreshold"},
+    {.name = "nvmlDeviceSetPowerManagementLimit_v2"},
+    {.name = "nvmlGpmMetricsGet"},
+    {.name = "nvmlGpmMigSampleGet"},
+    {.name = "nvmlGpmQueryDeviceSupport"},
+    {.name = "nvmlGpmQueryIfStreamingEnabled"},
+    {.name = "nvmlGpmSampleAlloc"},
+    {.name = "nvmlGpmSampleFree"},
+    {.name = "nvmlGpmSampleGet"},
+    {.name = "nvmlGpmSetStreamingEnabled"},
+    {.name = "nvmlGpuInstanceCreateComputeInstanceWithPlacement"},
+    {.name = "nvmlGpuInstanceGetComputeInstancePossiblePlacements"},
+    {.name = "nvmlGpuInstanceGetComputeInstanceProfileInfoV"},
+    {.name = "nvmlSystemGetConfComputeCapabilities"},
+    {.name = "nvmlSystemGetConfComputeGpusReadyState"},
+    {.name = "nvmlSystemGetConfComputeState"},
+    {.name = "nvmlSystemGetNvlinkBwMode"},
+    {.name = "nvmlSystemSetConfComputeGpusReadyState"},
+    {.name = "nvmlSystemSetNvlinkBwMode"},
+    {.name = "nvmlVgpuInstanceGetGpuPciId"},
+    {.name = "nvmlVgpuInstanceGetLicenseInfo_v2"},
+    {.name = "nvmlVgpuTypeGetCapabilities"},
+    {.name = "nvmlDeviceGetCurrentClocksEventReasons"},
+    {.name = "nvmlDeviceGetConfComputeProtectedMemoryUsage"},
+    {.name = "nvmlDeviceGetConfComputeMemSizeInfo"},
+    {.name = "nvmlDeviceGetConfComputeGpuCertificate"},
+    {.name = "nvmlDeviceGetConfComputeGpuAttestationReport"},
 };
 
 static void UNUSED bug_on() {
@@ -940,14 +1074,160 @@ void load_cuda_libraries() {
 }
 
 // #lizard forgives
-int get_cgroup_data(const char *pid_cgroup, char *pod_uid, char *container_id,
+// int get_cgroup_data(const char *pid_cgroup, char *pod_uid, char *container_id,
+//                     size_t size) {
+//   int ret = 1;
+//   FILE *cgroup_fd = NULL;
+//   char *token = NULL, *last_ptr = NULL, *last_second = NULL;
+//   char *cgroup_ptr = NULL;
+//   char buffer[4096];
+//   int is_systemd = 0;
+//   char *prune_pos = NULL;
+
+//   cgroup_fd = fopen(pid_cgroup, "r");
+//   if (unlikely(!cgroup_fd)) {
+//     LOGGER(4, "can't open %s, error %s", pid_cgroup, strerror(errno));
+//     goto DONE;
+//   }
+
+//   /**
+//    * find memory cgroup name
+//    */
+//   while (!feof(cgroup_fd)) {
+//     buffer[0] = '\0';
+//     if (unlikely(!fgets(buffer, sizeof(buffer), cgroup_fd))) {
+//       LOGGER(4, "can't get line from %s", pid_cgroup);
+//       goto DONE;
+//     }
+
+//     buffer[strlen(buffer) - 1] = '\0';
+
+//     last_ptr = NULL;
+//     token = buffer;
+//     for (token = strtok_r(token, ":", &last_ptr); token;
+//          token = NULL, token = strtok_r(token, ":", &last_ptr)) {
+//       if (!strcmp(token, "memory")) {
+//         cgroup_ptr = strtok_r(NULL, ":", &last_ptr);
+//         break;
+//       }
+//     }
+
+//     if (cgroup_ptr) {
+//       break;
+//     }
+//   }
+
+//   if (!cgroup_ptr) {
+//     LOGGER(4, "can't find memory cgroup from %s", pid_cgroup);
+//     goto DONE;
+//   }
+
+//   /**
+//    * find container id
+//    */
+//   last_ptr = NULL;
+//   last_second = NULL;
+//   token = cgroup_ptr;
+//   while (*token) {
+//     if (*token == '/') {
+//       last_second = last_ptr;
+//       last_ptr = token;
+//     }
+//     ++token;
+//   }
+
+//   if (!last_ptr) {
+//     goto DONE;
+//   }
+
+//   strncpy(container_id, last_ptr + 1, size);
+//   container_id[size - 1] = '\0';
+
+//   /**
+//    * if cgroup is systemd, cgroup pattern should be like
+//    * /kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod27882189_b4d9_11e9_b287_ec0d9ae89a20.slice/docker-4aa615892ab2a014d52178bdf3da1c4a45c8ddfb5171dd6e39dc910f96693e14.scope
+//    * /kubepods.slice/kubepods-pod019c1fe8_0d92_4aa0_b61c_4df58bdde71c.slice/cri-containerd-9e073649debeec6d511391c9ec7627ee67ce3a3fb508b0fa0437a97f8e58ba98.scope
+//    */
+//   if ((prune_pos = strstr(container_id, ".scope"))) {
+//     is_systemd = 1;
+//     *prune_pos = '\0';
+//   }
+
+//   /**
+//    * find pod uid
+//    */
+//   *last_ptr = '\0';
+//   if (!last_second) {
+//     goto DONE;
+//   }
+
+//   strncpy(pod_uid, last_second, size);
+//   pod_uid[size - 1] = '\0';
+
+//   if (is_systemd && (prune_pos = strstr(pod_uid, ".slice"))) {
+//     *prune_pos = '\0';
+//   }
+
+//   /**
+//    * remove unnecessary chars from $container_id and $pod_uid
+//    */
+//   if (is_systemd) {
+//     /**
+//      * For this kind of cgroup path, we need to find the last appearance of
+//      * slash
+//      * /kubepods.slice/kubepods-pod019c1fe8_0d92_4aa0_b61c_4df58bdde71c.slice/cri-containerd-9e073649debeec6d511391c9ec7627ee67ce3a3fb508b0fa0437a97f8e58ba98.scope
+//      */
+//     prune_pos = NULL;
+//     token = container_id;
+//     while (*token) {
+//       if (*token == '-') {
+//         prune_pos = token;
+//       }
+//       ++token;
+//     }
+
+//     if (!prune_pos) {
+//       LOGGER(4, "no - prefix");
+//       goto DONE;
+//     }
+
+//     memmove(container_id, prune_pos + 1, strlen(container_id));
+
+//     prune_pos = strstr(pod_uid, "-pod");
+//     if (!prune_pos) {
+//       LOGGER(4, "no pod string");
+//       goto DONE;
+//     }
+//     prune_pos += strlen("-pod");
+//     memmove(pod_uid, prune_pos, strlen(prune_pos));
+//     pod_uid[strlen(prune_pos)] = '\0';
+//     prune_pos = pod_uid;
+//     while (*prune_pos) {
+//       if (*prune_pos == '_') {
+//         *prune_pos = '-';
+//       }
+//       ++prune_pos;
+//     }
+//   } else {
+//     memmove(pod_uid, pod_uid + strlen("/pod"), strlen(pod_uid));
+//   }
+
+//   ret = 0;
+// DONE:
+//   if (cgroup_fd) {
+//     fclose(cgroup_fd);
+//   }
+//   return ret;
+// }
+
+int get_cgroup_data(const char *pid_cgroup, char *container_id,
                     size_t size) {
   int ret = 1;
   FILE *cgroup_fd = NULL;
-  char *token = NULL, *last_ptr = NULL, *last_second = NULL;
+  char *token = NULL, *last_ptr = NULL;
   char *cgroup_ptr = NULL;
   char buffer[4096];
-  int is_systemd = 0;
+  // int is_systemd = 0;
   char *prune_pos = NULL;
 
   cgroup_fd = fopen(pid_cgroup, "r");
@@ -970,17 +1250,21 @@ int get_cgroup_data(const char *pid_cgroup, char *pod_uid, char *container_id,
 
     last_ptr = NULL;
     token = buffer;
-    for (token = strtok_r(token, ":", &last_ptr); token;
-         token = NULL, token = strtok_r(token, ":", &last_ptr)) {
-      if (!strcmp(token, "memory")) {
-        cgroup_ptr = strtok_r(NULL, ":", &last_ptr);
-        break;
-      }
-    }
-
-    if (cgroup_ptr) {
+    if (strstr(token, "memory") != NULL) {
+      cgroup_ptr = token;
       break;
     }
+    // for (token = strtok_r(token, ":", &last_ptr); token;
+    //      token = NULL, token = strtok_r(token, ":", &last_ptr)) {
+    //   if (!strcmp(token, "memory")) {
+    //     cgroup_ptr = strtok_r(NULL, ":", &last_ptr);
+    //     break;
+    //   }
+    // }
+
+    // if (cgroup_ptr) {
+    //   break;
+    // }
   }
 
   if (!cgroup_ptr) {
@@ -988,62 +1272,40 @@ int get_cgroup_data(const char *pid_cgroup, char *pod_uid, char *container_id,
     goto DONE;
   }
 
+  // Remove spaces and replace ":" with "/"
+  for (int i = 0; cgroup_ptr[i] != '\0'; i++) {
+    if (cgroup_ptr[i] == ':') {
+      cgroup_ptr[i] = '/';
+    }
+  }  
+
   /**
    * find container id
    */
+// 5/memory//system.slice/containerd.service/kubepods-besteffort-poda5494409_937b_4ea3_b472_4c6f99b5b04e.slice/cri-containerd/2424018ce2c2ef658d255058ecf1793440a5eb6666d1c480ec628bd71149872c
   last_ptr = NULL;
-  last_second = NULL;
-  token = cgroup_ptr;
-  while (*token) {
-    if (*token == '/') {
-      last_second = last_ptr;
-      last_ptr = token;
-    }
-    ++token;
-  }
-
+  // token = cgroup_ptr;
+  // while (*token) {
+  //   if (*token == '/') {
+  //     last_ptr = token;
+  //   }
+  //   ++token;
+  // }
+  const char ch = '/';
+  last_ptr = strrchr(cgroup_ptr, ch);
   if (!last_ptr) {
     goto DONE;
   }
 
   strncpy(container_id, last_ptr + 1, size);
   container_id[size - 1] = '\0';
-
-  /**
-   * if cgroup is systemd, cgroup pattern should be like
-   * /kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod27882189_b4d9_11e9_b287_ec0d9ae89a20.slice/docker-4aa615892ab2a014d52178bdf3da1c4a45c8ddfb5171dd6e39dc910f96693e14.scope
-   * /kubepods.slice/kubepods-pod019c1fe8_0d92_4aa0_b61c_4df58bdde71c.slice/cri-containerd-9e073649debeec6d511391c9ec7627ee67ce3a3fb508b0fa0437a97f8e58ba98.scope
-   */
-  if ((prune_pos = strstr(container_id, ".scope"))) {
-    is_systemd = 1;
-    *prune_pos = '\0';
-  }
-
-  /**
-   * find pod uid
-   */
-  *last_ptr = '\0';
-  if (!last_second) {
-    goto DONE;
-  }
-
-  strncpy(pod_uid, last_second, size);
-  pod_uid[size - 1] = '\0';
-
-  if (is_systemd && (prune_pos = strstr(pod_uid, ".slice"))) {
-    *prune_pos = '\0';
-  }
-
-  /**
-   * remove unnecessary chars from $container_id and $pod_uid
-   */
-  if (is_systemd) {
+  
+  if (strstr(container_id, ".scope")) {
     /**
      * For this kind of cgroup path, we need to find the last appearance of
      * slash
      * /kubepods.slice/kubepods-pod019c1fe8_0d92_4aa0_b61c_4df58bdde71c.slice/cri-containerd-9e073649debeec6d511391c9ec7627ee67ce3a3fb508b0fa0437a97f8e58ba98.scope
      */
-    prune_pos = NULL;
     token = container_id;
     while (*token) {
       if (*token == '-') {
@@ -1054,28 +1316,10 @@ int get_cgroup_data(const char *pid_cgroup, char *pod_uid, char *container_id,
 
     if (!prune_pos) {
       LOGGER(4, "no - prefix");
+      ret = 1;
       goto DONE;
     }
-
-    memmove(container_id, prune_pos + 1, strlen(container_id));
-
-    prune_pos = strstr(pod_uid, "-pod");
-    if (!prune_pos) {
-      LOGGER(4, "no pod string");
-      goto DONE;
-    }
-    prune_pos += strlen("-pod");
-    memmove(pod_uid, prune_pos, strlen(prune_pos));
-    pod_uid[strlen(prune_pos)] = '\0';
-    prune_pos = pod_uid;
-    while (*prune_pos) {
-      if (*prune_pos == '_') {
-        *prune_pos = '-';
-      }
-      ++prune_pos;
-    }
-  } else {
-    memmove(pod_uid, pod_uid + strlen("/pod"), strlen(pod_uid));
+    memmove(container_id, prune_pos + 1, strlen(container_id) - 6);
   }
 
   ret = 0;
@@ -1088,13 +1332,12 @@ DONE:
 
 static int get_path_by_cgroup(const char *pid_cgroup) {
   int ret = 1;
-  char pod_uid[4096], container_id[4096];
 
   if (is_custom_config_path()) {
     return 0;
   }
-
-  if (unlikely(get_cgroup_data(pid_cgroup, pod_uid, container_id,
+  char container_id[4096];
+  if (unlikely(get_cgroup_data(pid_cgroup, container_id,
                                sizeof(container_id)))) {
     LOGGER(4, "can't find container id from %s", pid_cgroup);
     goto DONE;
@@ -1109,12 +1352,41 @@ static int get_path_by_cgroup(const char *pid_cgroup) {
   LOGGER(4, "pid file: %s", pid_path);
   ret = 0;
 
-  LOGGER(4, "register to remote: pod uid: %s, cont id: %s", pod_uid,
-         container_id);
-  register_to_remote_with_data("", pod_uid, container_id);
+  LOGGER(4, "register to remote: cont id: %s", container_id);
+  register_to_remote_with_data("", "", container_id, pid_cgroup);
 DONE:
   return ret;
 }
+
+// static int get_path_by_cgroup(const char *pid_cgroup) {
+//   int ret = 1;
+//   char pod_uid[4096], container_id[4096];
+
+//   if (is_custom_config_path()) {
+//     return 0;
+//   }
+
+//   if (unlikely(get_cgroup_data(pid_cgroup, pod_uid, container_id,
+//                                sizeof(container_id)))) {
+//     LOGGER(4, "can't find container id from %s", pid_cgroup);
+//     goto DONE;
+//   }
+
+//   snprintf(base_dir, sizeof(base_dir), "%s%s", VCUDA_CONFIG_PATH, container_id);
+//   snprintf(config_path, sizeof(config_path), "%s/%s", base_dir,
+//            CONTROLLER_CONFIG_NAME);
+//   snprintf(pid_path, sizeof(pid_path), "%s/%s", base_dir, PIDS_CONFIG_NAME);
+
+//   LOGGER(4, "config file: %s", config_path);
+//   LOGGER(4, "pid file: %s", pid_path);
+//   ret = 0;
+
+//   LOGGER(4, "register to remote: pod uid: %s, cont id: %s", pod_uid,
+//          container_id);
+//   register_to_remote_with_data("", pod_uid, container_id, "");
+// DONE:
+//   return ret;
+// }
 
 static int is_default_config_path() {
   int fd = -1;
@@ -1187,7 +1459,7 @@ int read_controller_configuration() {
   int ret = 1;
 
   if (!is_default_config_path()) {
-    if (get_path_by_cgroup("/proc/self/cgroup")) {
+    if (get_path_by_cgroup(CGROUP_PATH)) {
       LOGGER(FATAL, "can't get config file path");
     }
   }
@@ -1225,10 +1497,13 @@ DONE:
 }
 
 void load_necessary_data() {
+  // 加载vcuda.config配置文件到全局变量
   read_controller_configuration();
+  // 加载库
   load_cuda_single_library(CUDA_ENTRY_ENUM(cuDriverGetVersion));
-
+  // 线程一次性初始化 加载cuda库
   pthread_once(&g_cuda_set, load_cuda_libraries);
+  // 线程一次性初始化 加载驱动库
   pthread_once(&g_driver_set, load_driver_libraries);
 }
 

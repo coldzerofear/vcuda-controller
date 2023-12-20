@@ -33,6 +33,11 @@ extern "C" {
 #include "nvml-subset.h"
 
 /**
+ * Container cgroup base path
+ */
+#define CGROUP_PATH "/proc/self/cgroup"
+
+/**
  * Controller configuration base path
  */
 #define VCUDA_CONFIG_PATH "/etc/vcuda/"
@@ -83,7 +88,8 @@ extern "C" {
  * Max sample pid size
  */
 #define MAX_PIDS (1024)
-
+// if分支预测，提升执行效率
+// likely 表示分支极大可能满足条件，unlikely反之
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
@@ -139,6 +145,8 @@ typedef enum {
   VERBOSE = 4,
 } log_level_enum_t;
 
+typedef void (*atomic_fn_ptr)(int, void *);
+
 #define LOGGER(level, format, ...)                              \
   ({                                                            \
     char *_print_level_str = getenv("LOGGER_LEVEL");            \
@@ -174,9 +182,11 @@ void load_necessary_data();
  * @param bus_id bus is of GPU card
  * @param pod_uid  pod uid of Pod
  * @param container_name container name of Pod
+ * @param config_path container cgroup path
  */
 void register_to_remote_with_data(const char *bus_id, const char *pod_uid,
-                                  const char *container_name);
+                                  const char *container_name, 
+                                  const char *cgroup_path);
 
 /**
  * Tell whether we're using old method to find controller configuration path
@@ -184,6 +194,16 @@ void register_to_remote_with_data(const char *bus_id, const char *pod_uid,
  * @return 1 -> using new, 0 -> using old
  */
 int is_custom_config_path();
+
+void atomic_action(const char *, atomic_fn_ptr, void *);
+
+// 通过容器pid获取已使用的显存
+void get_used_gpu_memory(int, void *);
+
+// 从容器pid文件中加载pid
+void load_pids_table(int, void *);
+
+void search_on_pids_table(unsigned int *, nvmlProcessInfo_t *);
 
 #ifdef __cplusplus
 }
