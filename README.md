@@ -1,3 +1,5 @@
+Try using [vgpu-manager](https://github.com/coldzerofear/vgpu-manager) to solve the scheduling and allocation problems of VGPU. It will solve some existing problems and add new features that you may be interested in.
+
 # vcuda-controller
 
 [![Build Status](https://travis-ci.org/tkestack/vcuda-controller.svg?branch=master)](https://travis-ci.org/tkestack/vcuda-controller)
